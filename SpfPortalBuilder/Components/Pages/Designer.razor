@@ -1,0 +1,112 @@
+@page "/designer"
+@page "/designer/{Id:guid}"
+@rendermode InteractiveServer
+@inject DashboardService DashboardService
+@inject NavigationManager Nav
+
+<div style="display:flex; flex-direction:column; height:calc(100vh - 3rem);">
+    <!-- Toolbar -->
+    <div class="designer-toolbar">
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <h2 style="font-weight:600; color:var(--mine-800);">@(CurrentDashboard?.Name ?? "New Dashboard")</h2>
+            <span class="badge badge-neutral">@(Id.HasValue ? "Editing" : "New")</span>
+        </div>
+        <div style="display:flex; gap:0.5rem;">
+            <button class="btn btn-primary btn-sm" @onclick="() => ShowWidgetPicker = true">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Add Widget
+            </button>
+            <button class="btn btn-secondary btn-sm" @onclick="Save">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                Save
+            </button>
+        </div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="designer-canvas">
+        @if (CurrentDashboard == null || CurrentDashboard.Widgets.Count == 0)
+        {
+            <div style="display:flex; align-items:center; justify-content:center; height:100%;">
+                <div style="text-align:center;">
+                    <div style="width:96px;height:96px;background:var(--mine-200);border-radius:0.75rem;display:inline-flex;align-items:center;justify-content:center;margin-bottom:1rem;">
+                        <svg width="48" height="48" fill="none" stroke="var(--mine-400)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 12a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7z"/></svg>
+                    </div>
+                    <h3 style="font-size:1.125rem; font-weight:500; color:var(--mine-700); margin-bottom:0.5rem;">Start Building</h3>
+                    <p style="color:var(--mine-500);">Click "Add Widget" to add safety data components to your dashboard.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-12" style="grid-auto-rows:80px; gap:1rem;">
+                @foreach (var widget in CurrentDashboard.Widgets)
+                {
+                    <div style="grid-column: span @Math.Min(widget.Width, 12); grid-row: span @widget.Height; position:relative;"
+                         class="widget-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                            <span style="font-size:0.75rem; font-weight:500; color:var(--mine-500);">@widget.Title</span>
+                            <button class="btn btn-sm" style="padding:0.25rem; background:var(--danger-50);" @onclick="() => RemoveWidget(widget.Id)">
+                                <svg width="14" height="14" fill="none" stroke="var(--danger-500)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                        <WidgetContent Type="@widget.Type" Title="@widget.Title" />
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Widget Picker Modal -->
+@if (ShowWidgetPicker)
+{
+    <WidgetPicker OnSelect="AddWidget" OnClose="() => ShowWidgetPicker = false" />
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private Dashboard? CurrentDashboard;
+    private bool ShowWidgetPicker;
+
+    protected override void OnParametersSet()
+    {
+        if (Id.HasValue)
+        {
+            CurrentDashboard = DashboardService.GetDashboard(Id.Value);
+        }
+
+        if (CurrentDashboard == null)
+        {
+            var newId = DashboardService.CreateDashboard("Untitled Dashboard");
+            CurrentDashboard = DashboardService.GetDashboard(newId);
+            if (!Id.HasValue && CurrentDashboard != null)
+            {
+                Nav.NavigateTo($"designer/{CurrentDashboard.Id}", replace: true);
+            }
+        }
+    }
+
+    private void AddWidget(string widgetType)
+    {
+        if (CurrentDashboard != null)
+        {
+            DashboardService.AddWidget(CurrentDashboard.Id, widgetType);
+        }
+        ShowWidgetPicker = false;
+    }
+
+    private void RemoveWidget(Guid widgetId)
+    {
+        if (CurrentDashboard != null)
+        {
+            DashboardService.RemoveWidget(CurrentDashboard.Id, widgetId);
+        }
+    }
+
+    private void Save()
+    {
+        // Dashboard is already in memory — in production this would persist to Azure
+    }
+}
