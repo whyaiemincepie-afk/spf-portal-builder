@@ -1,0 +1,79 @@
+@page "/templates"
+@rendermode InteractiveServer
+@inject DashboardService DashboardService
+@inject NavigationManager Nav
+
+<div style="margin-bottom:1.5rem;">
+    <h1 class="page-title">Templates</h1>
+    <p class="page-subtitle">Start with a pre-built template designed for common mine safety workflows. Customize it to fit your site.</p>
+</div>
+
+<div class="grid grid-3">
+    @foreach (var template in templates)
+    {
+        <div class="widget-card template-card">
+            <div style="display:flex; gap:0.75rem; margin-bottom:0.75rem;">
+                <div class="template-icon" style="background:@template.BgColor; color:@template.FgColor;">
+                    @((MarkupString)template.Icon)
+                </div>
+                <div>
+                    <div style="font-weight:600; color:var(--mine-800);">@template.Name</div>
+                    <p style="font-size:0.875rem; color:var(--mine-500); margin-top:0.25rem;">@template.Description</p>
+                </div>
+            </div>
+            <div class="template-footer">
+                <span style="font-size:0.75rem; color:var(--mine-400);">@template.Widgets.Count widgets included</span>
+                <button class="template-link" @onclick="() => UseTemplate(template)">Use Template →</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private record TemplateInfo(string Name, string Description, string BgColor, string FgColor, string Icon, List<string> Widgets);
+
+    private void UseTemplate(TemplateInfo template)
+    {
+        var id = DashboardService.CreateFromTemplate(template.Name, template.Widgets);
+        Nav.NavigateTo($"designer/{id}");
+    }
+
+    private readonly List<TemplateInfo> templates = new()
+    {
+        new("Shift Handover Board",
+            "Real-time overview for shift handover — active hazards, incidents this shift, crew status, and outstanding actions.",
+            "var(--mine-100)", "#1d4ed8",
+            @"<svg width=""20"" height=""20"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4""/></svg>",
+            new List<string> { "incident-feed", "hazard-map", "kpi-card", "action-list" }),
+
+        new("Incident Tracker",
+            "Track and monitor safety incidents — severity breakdown, trending categories, investigation status, and corrective actions.",
+            "var(--danger-100)", "var(--danger-700)",
+            @"<svg width=""20"" height=""20"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z""/></svg>",
+            new List<string> { "incident-chart", "incident-table", "severity-gauge", "kpi-card" }),
+
+        new("Compliance Dashboard",
+            "Monitor regulatory compliance status — obligation tracking, audit schedules, non-conformance trends, and expiry alerts.",
+            "var(--safety-100)", "var(--safety-700)",
+            @"<svg width=""20"" height=""20"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z""/></svg>",
+            new List<string> { "compliance-gauge", "audit-calendar", "obligation-table", "alert-panel" }),
+
+        new("Training Status",
+            "Crew training overview — competency matrix, expiring certifications, scheduled courses, and completion rates.",
+            "#f3e8ff", "#7c3aed",
+            @"<svg width=""20"" height=""20"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222""/></svg>",
+            new List<string> { "training-matrix", "expiry-alerts", "completion-chart", "kpi-card" }),
+
+        new("Equipment Health",
+            "Monitor equipment condition and certifications — maintenance schedules, downtime tracking, and safety-critical alerts.",
+            "var(--warning-100)", "var(--warning-600)",
+            @"<svg width=""20"" height=""20"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z""/><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M15 12a3 3 0 11-6 0 3 3 0 016 0z""/></svg>",
+            new List<string> { "equipment-status", "maintenance-calendar", "cert-expiry", "kpi-card" }),
+
+        new("Inspection Overview",
+            "Inspection management — upcoming inspections, findings summary, overdue follow-ups, and area scores.",
+            "#ccfbf1", "#0d9488",
+            @"<svg width=""20"" height=""20"" fill=""none"" stroke=""currentColor"" viewBox=""0 0 24 24""><path stroke-linecap=""round"" stroke-linejoin=""round"" stroke-width=""2"" d=""M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4""/></svg>",
+            new List<string> { "inspection-calendar", "findings-chart", "area-scores", "action-list" }),
+    };
+}
